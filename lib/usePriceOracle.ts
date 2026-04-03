@@ -101,6 +101,7 @@ export function usePriceOracle(token: OP20Token | null) {
     isLoading,
     error,
     lastUpdate: priceData?.lastUpdate ?? null,
+    priceSource: token?.hasDirectBTCPair ? 'direct-btc' : 'moto-intermediate',
     refresh: fetchPrice
   };
 }
