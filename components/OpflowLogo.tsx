@@ -1,6 +1,6 @@
 /**
- * OPFLOW NEW LOGO
- * Modern circular design with gradient and flow animation
+ * OPFLOW LOGO - PREMIUM DESIGN
+ * Modern, elegant logo with flowing gradient and dynamic animation
  */
 
 'use client';
@@ -9,39 +9,54 @@ import { motion } from 'framer-motion';
 
 export function OpflowLogo({ className = '', size = 40 }: { className?: string; size?: number }) {
   return (
-    <div className={`relative ${className} group`}>
+    <div className={`relative inline-flex items-center ${className}`}>
       <svg
-        width={size * 3.5}
+        width={size * 4}
         height={size}
-        viewBox="0 0 140 40"
+        viewBox="0 0 160 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        className="overflow-visible"
       >
         <defs>
-          <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F7931A" />
-            <stop offset="100%" stopColor="#0052FF" />
+          {/* Premium gradient */}
+          <linearGradient id="opflowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#F7931A" stopOpacity="1" />
+            <stop offset="50%" stopColor="#FF6B35" stopOpacity="1" />
+            <stop offset="100%" stopColor="#0052FF" stopOpacity="1" />
           </linearGradient>
           
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          {/* Glow effect */}
+          <filter id="opflowGlow">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
+          
+          {/* Shimmer effect */}
+          <linearGradient id="shimmer" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="transparent" />
+            <stop offset="50%" stopColor="rgba(255,255,255,0.3)" />
+            <stop offset="100%" stopColor="transparent" />
+          </linearGradient>
         </defs>
         
-        <motion.circle
-          cx="20"
-          cy="20"
-          r="18"
-          fill="url(#logoGradient)"
-          opacity="0.2"
-          filter="url(#glow)"
+        {/* Flowing wave background */}
+        <motion.path
+          d="M5 20 Q15 10, 25 20 T45 20"
+          stroke="url(#opflowGradient)"
+          strokeWidth="2"
+          fill="none"
+          strokeLinecap="round"
+          opacity="0.3"
           animate={{
-            scale: [1, 1.05, 1],
-            opacity: [0.2, 0.3, 0.2]
+            d: [
+              "M5 20 Q15 10, 25 20 T45 20",
+              "M5 20 Q15 30, 25 20 T45 20",
+              "M5 20 Q15 10, 25 20 T45 20"
+            ]
           }}
           transition={{
             duration: 3,
@@ -50,66 +65,97 @@ export function OpflowLogo({ className = '', size = 40 }: { className?: string; 
           }}
         />
         
-        <circle
-          cx="20"
-          cy="20"
-          r="16"
-          fill="none"
-          stroke="url(#logoGradient)"
-          strokeWidth="2"
-        />
+        {/* "O" - Circle with flow */}
+        <g>
+          <motion.circle
+            cx="20"
+            cy="20"
+            r="12"
+            stroke="url(#opflowGradient)"
+            strokeWidth="2.5"
+            fill="none"
+            filter="url(#opflowGlow)"
+            animate={{
+              strokeWidth: [2.5, 3, 2.5],
+              opacity: [0.8, 1, 0.8]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+          
+          {/* Inner flowing circle */}
+          <motion.circle
+            cx="20"
+            cy="20"
+            r="6"
+            fill="url(#opflowGradient)"
+            opacity="0.5"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.6, 0.3]
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          />
+        </g>
         
+        {/* "PFLOW" text */}
         <text
-          x="20"
-          y="26"
-          fontSize="16"
-          fontWeight="700"
-          fill="white"
-          textAnchor="middle"
-          fontFamily="var(--font-satoshi)"
-        >
-          OF
-        </text>
-        
-        <motion.path
-          d="M 4 20 Q 12 15, 20 20 T 36 20"
-          stroke="#F7931A"
-          strokeWidth="1.5"
-          fill="none"
-          strokeLinecap="round"
-          opacity="0.6"
-          animate={{
-            d: [
-              "M 4 20 Q 12 15, 20 20 T 36 20",
-              "M 4 20 Q 12 25, 20 20 T 36 20",
-              "M 4 20 Q 12 15, 20 20 T 36 20",
-            ]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        
-        <text
-          x="48"
+          x="42"
           y="27"
-          fontSize="22"
+          fontSize="24"
           fontWeight="700"
           fill="white"
-          fontFamily="var(--font-satoshi)"
+          fontFamily="var(--font-satoshi), system-ui"
+          letterSpacing="-0.5"
         >
           pflow
         </text>
+        
+        {/* Subtle underline accent */}
+        <motion.rect
+          x="42"
+          y="32"
+          width="0"
+          height="2"
+          fill="url(#opflowGradient)"
+          rx="1"
+          animate={{
+            width: [0, 70, 0]
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "easeInOut",
+            repeatDelay: 2
+          }}
+        />
+        
+        {/* Shimmer overlay animation */}
+        <motion.rect
+          x="0"
+          y="0"
+          width="40"
+          height="40"
+          fill="url(#shimmer)"
+          style={{ mixBlendMode: 'overlay' }}
+          animate={{
+            x: [-50, 200]
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "linear",
+            repeatDelay: 2
+          }}
+        />
       </svg>
-      
-      <motion.div
-        className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle, rgba(247, 147, 26, 0.6) 0%, transparent 70%)'
-        }}
-      />
     </div>
   );
 }

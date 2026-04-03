@@ -1,157 +1,256 @@
 /**
- * CHART SECTION
- * 
- * Simple live chart showing aggregated trades + MotoSwap price overlay
- * Lightweight implementation without heavy chart libraries
+ * LIVE PRICE CHART
+ * Real-time price chart with live updates from price oracle
  */
 
 'use client';
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-
-interface TradeData {
-  time: string;
-  price: number;
-  amount: number;
-  type: 'buy' | 'sell';
-}
+import { OP20_TOKENS } from '@/lib/constants';
+import { usePriceOracle } from '@/lib/usePriceOracle';
 
 export function Chart() {
-  const [trades, setTrades] = useState<TradeData[]>([]);
+  const [selectedToken, setSelectedToken] = useState(OP20_TOKENS[0]);
   const [timeframe, setTimeframe] = useState<'1H' | '24H' | '7D'>('24H');
+  const [priceHistory, setPriceHistory] = useState<Array<{ time: number; price: number; priceBTC: number }>>([]);
   
-  // Mock trade data - in production, fetch from backend
+  const { price, priceInBTC, isLoading, lastUpdate } = usePriceOracle(selectedToken);
+
+  // Update price history when new price arrives
   useEffect(() => {
-    const mockTrades: TradeData[] = [
-      { time: '14:30', price: 0.000045, amount: 1000, type: 'buy' },
-      { time: '14:25', price: 0.000043, amount: 2500, type: 'sell' },
-      { time: '14:20', price: 0.000044, amount: 1500, type: 'buy' },
-      { time: '14:15', price: 0.000042, amount: 3000, type: 'sell' },
-      { time: '14:10', price: 0.000046, amount: 800, type: 'buy' },
-    ];
-    setTrades(mockTrades);
-  }, [timeframe]);
-  
-  const maxPrice = Math.max(...trades.map(t => t.price));
-  const minPrice = Math.min(...trades.map(t => t.price));
-  const priceRange = maxPrice - minPrice;
-  
+    if (price && priceInBTC && lastUpdate) {
+      setPriceHistory(prev => {
+        const newEntry = { time: lastUpdate, price, priceBTC: priceInBTC };
+        const updated = [...prev, newEntry];
+        
+        // Keep last 100 data points
+        if (updated.length > 100) {
+          updated.shift();
+        }
+        
+        return updated;
+      });
+    }
+  }, [price, priceInBTC, lastUpdate]);
+
+  // Generate chart path from price history
+  const generateChartPath = () => {
+    if (priceHistory.length < 2) {
+      // Not enough data, show flat line
+      return 'M 0 100 L 300 100';
+    }
+
+    const width = 300;
+    const height = 100;
+    const padding = 10;
+
+    // Get price range
+    const prices = priceHistory.map(p => p.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice || 1; // Avoid division by zero
+
+    // Generate SVG path
+    let path = '';
+    priceHistory.forEach((point, index) => {
+      const x = (index / (priceHistory.length - 1)) * width;
+      const y = height - padding - ((point.price - minPrice) / priceRange) * (height - 2 * padding);
+      
+      if (index === 0) {
+        path += `M ${x} ${y}`;
+      } else {
+        path += ` L ${x} ${y}`;
+      }
+    });
+
+    return path;
+  };
+
+  const formatPrice = (value: number | null) => {
+    if (!value) return '$0.00';
+    if (value < 0.01) return `$${value.toFixed(6)}`;
+    return `$${value.toFixed(2)}`;
+  };
+
+  const formatBTCPrice = (value: number | null) => {
+    if (!value) return '0 BTC';
+    return `${value.toFixed(8)} BTC`;
+  };
+
+  const getPriceChange = () => {
+    if (priceHistory.length < 2) return { percent: 0, isPositive: true };
+    
+    const oldPrice = priceHistory[0].price;
+    const currentPrice = priceHistory[priceHistory.length - 1].price;
+    const change = ((currentPrice - oldPrice) / oldPrice) * 100;
+    
+    return { percent: Math.abs(change), isPositive: change >= 0 };
+  };
+
+  const priceChange = getPriceChange();
+
   return (
-    <section id="chart" className="py-24 px-4 relative">
+    <section className="py-24 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Section Header */}
         <motion.div
-          className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
+          className="glass p-8 rounded-2xl"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Live Trading Activity
-          </h2>
-          <p className="text-xl text-white/60">
-            Real-time trades synced with MotoSwap prices
-          </p>
-        </motion.div>
-        
-        {/* Chart Container */}
-        <motion.div
-          className="glass-hover rounded-2xl p-8"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          {/* Timeframe Selector */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex gap-2">
-              {(['1H', '24H', '7D'] as const).map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    timeframe === tf
-                      ? 'bg-bitcoin-orange text-white'
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  {tf}
-                </button>
-              ))}
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2">Live Price Chart</h3>
+              <p className="text-white/60">Real-time price updates from MotoSwap</p>
             </div>
             
-            <div className="flex items-center gap-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-green-400 rounded-full" />
-                <span className="text-white/60">Buy</span>
-              </div>
-              <div className="flex items-center gap-2 ml-4">
-                <div className="w-3 h-3 bg-red-400 rounded-full" />
-                <span className="text-white/60">Sell</span>
-              </div>
+            {/* Token Selector */}
+            <div className="mt-4 md:mt-0">
+              <select
+                value={selectedToken.symbol}
+                onChange={(e) => {
+                  const token = OP20_TOKENS.find(t => t.symbol === e.target.value);
+                  if (token) {
+                    setSelectedToken(token);
+                    setPriceHistory([]); // Reset history when changing tokens
+                  }
+                }}
+                className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-bitcoin-orange"
+              >
+                {OP20_TOKENS.map(token => (
+                  <option key={token.symbol} value={token.symbol} className="bg-dark-bg">
+                    {token.symbol} - {token.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-          
-          {/* Simple Bar Chart */}
-          <div className="relative h-64 flex items-end justify-between gap-2">
-            {trades.map((trade, index) => {
-              const heightPercent = ((trade.price - minPrice) / priceRange) * 100;
-              return (
-                <motion.div
-                  key={index}
-                  className="flex-1 relative group"
-                  initial={{ scaleY: 0 }}
-                  whileInView={{ scaleY: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <div
-                    className={`w-full rounded-t-lg transition-all cursor-pointer ${
-                      trade.type === 'buy'
-                        ? 'bg-green-400/30 hover:bg-green-400/50'
-                        : 'bg-red-400/30 hover:bg-red-400/50'
-                    }`}
-                    style={{ height: `${heightPercent}%` }}
-                  />
-                  
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 glass p-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                    <div className="text-xs text-white/60">{trade.time}</div>
-                    <div className="text-sm font-bold text-white">${trade.price.toFixed(6)}</div>
-                    <div className="text-xs text-white/80">{trade.amount.toLocaleString()} tokens</div>
-                  </div>
-                </motion.div>
-              );
-            })}
+
+          {/* Price Display */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white/5 rounded-xl p-6">
+              <p className="text-sm text-white/60 mb-2">Current Price (USD)</p>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-bitcoin-orange border-t-transparent rounded-full animate-spin" />
+                  <span className="text-white/40">Loading...</span>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-white">{formatPrice(price)}</p>
+              )}
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-6">
+              <p className="text-sm text-white/60 mb-2">Price in BTC</p>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-bitcoin-orange border-t-transparent rounded-full animate-spin" />
+                  <span className="text-white/40">Loading...</span>
+                </div>
+              ) : (
+                <p className="text-3xl font-bold text-bitcoin-orange">{formatBTCPrice(priceInBTC)}</p>
+              )}
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-6">
+              <p className="text-sm text-white/60 mb-2">24h Change</p>
+              <p className={`text-3xl font-bold ${priceChange.isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                {priceChange.isPositive ? '+' : '-'}{priceChange.percent.toFixed(2)}%
+              </p>
+            </div>
           </div>
-          
-          {/* X-axis labels */}
-          <div className="flex justify-between mt-4 text-xs text-white/40">
-            {trades.map((trade, index) => (
-              <div key={index} className="flex-1 text-center">
-                {trade.time}
-              </div>
+
+          {/* Chart */}
+          <div className="bg-black/30 rounded-xl p-6 mb-6">
+            <svg
+              width="100%"
+              height="200"
+              viewBox="0 0 300 120"
+              preserveAspectRatio="none"
+              className="overflow-visible"
+            >
+              <defs>
+                <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={priceChange.isPositive ? '#10B981' : '#EF4444'} stopOpacity="0.3" />
+                  <stop offset="100%" stopColor={priceChange.isPositive ? '#10B981' : '#EF4444'} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+
+              {/* Chart area fill */}
+              <path
+                d={`${generateChartPath()} L 300 120 L 0 120 Z`}
+                fill="url(#chartGradient)"
+              />
+
+              {/* Chart line */}
+              <motion.path
+                d={generateChartPath()}
+                stroke={priceChange.isPositive ? '#10B981' : '#EF4444'}
+                strokeWidth="2"
+                fill="none"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              />
+
+              {/* Grid lines */}
+              {[0, 25, 50, 75, 100].map(y => (
+                <line
+                  key={y}
+                  x1="0"
+                  y1={y}
+                  x2="300"
+                  y2={y}
+                  stroke="rgba(255,255,255,0.1)"
+                  strokeWidth="0.5"
+                />
+              ))}
+            </svg>
+          </div>
+
+          {/* Timeframe Selector */}
+          <div className="flex gap-2 justify-center">
+            {(['1H', '24H', '7D'] as const).map(tf => (
+              <button
+                key={tf}
+                onClick={() => setTimeframe(tf)}
+                className={`px-6 py-2 rounded-lg transition-colors ${
+                  timeframe === tf
+                    ? 'bg-bitcoin-orange text-white'
+                    : 'bg-white/10 text-white/60 hover:bg-white/20'
+                }`}
+              >
+                {tf}
+              </button>
             ))}
           </div>
-          
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-6 mt-8 pt-8 border-t border-white/10">
-            <div>
-              <div className="text-sm text-white/60 mb-1">24h Volume</div>
-              <div className="text-2xl font-bold text-white">$12,450</div>
-              <div className="text-sm text-green-400">+24.5%</div>
-            </div>
-            <div>
-              <div className="text-sm text-white/60 mb-1">24h High</div>
-              <div className="text-2xl font-bold text-white">${maxPrice.toFixed(6)}</div>
-            </div>
-            <div>
-              <div className="text-sm text-white/60 mb-1">24h Low</div>
-              <div className="text-2xl font-bold text-white">${minPrice.toFixed(6)}</div>
-            </div>
+
+          {/* Live Indicator */}
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <motion.div
+              className="w-2 h-2 rounded-full bg-green-400"
+              animate={{
+                opacity: [1, 0.5, 1],
+                scale: [1, 1.2, 1]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <span className="text-sm text-white/60">
+              Live • Updates every 15s
+            </span>
           </div>
+
+          {lastUpdate && (
+            <p className="text-center text-xs text-white/40 mt-2">
+              Last update: {new Date(lastUpdate).toLocaleTimeString()}
+            </p>
+          )}
         </motion.div>
       </div>
     </section>
