@@ -95,3 +95,20 @@ export const BASE_TOKENS: BaseToken[] = [
 export const PRICE_REFRESH_INTERVAL = 15000;
 export const MAX_RETRIES = 3;
 export const RETRY_DELAY = 2000;
+
+// Explorer URLs
+export const getOPNetExplorerUrl = (txHash: string): string => {
+  return `https://opscan.org/tx/${txHash}`;
+};
+
+export const getBaseExplorerUrl = (txHash: string): string => {
+  return `https://basescan.org/tx/${txHash}`;
+};
+
+export const getOPNetAddressUrl = (address: string): string => {
+  return `https://opscan.org/address/${address}`;
+};
+
+export const getBaseAddressUrl = (address: string): string => {
+  return `https://basescan.org/address/${address}`;
+};
