@@ -24,10 +24,10 @@ export function Navbar() {
     baseAddress,
     baseBalance,
     baseConnected,
-    connectOPNet,
-    disconnectOPNet,
-    connectBase,
-    disconnectBase
+    connectOPWallet,
+    disconnectOPWallet,
+    connectBaseWallet,
+    disconnectBaseWallet
   } = useWalletStore();
   
   const [isConnectingOPNet, setIsConnectingOPNet] = useState(false);
@@ -36,7 +36,7 @@ export function Navbar() {
   const handleOPNetConnect = async () => {
     setIsConnectingOPNet(true);
     try {
-      await connectOPNet();
+      await connectOPWallet();
     } catch (error) {
       console.error('Failed to connect OP_NET wallet:', error);
       alert('Failed to connect OP_NET wallet. Please install OP_WALLET extension.');
@@ -48,7 +48,7 @@ export function Navbar() {
   const handleBaseConnect = async () => {
     setIsConnectingBase(true);
     try {
-      await connectBase();
+      await connectBaseWallet();
     } catch (error) {
       console.error('Failed to connect Base wallet:', error);
       alert('Failed to connect Base wallet. Please install MetaMask, Rabby, or Coinbase Wallet.');
@@ -99,7 +99,7 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             {/* OP_NET Wallet */}
             <motion.button
-              onClick={opnetConnected ? disconnectOPNet : handleOPNetConnect}
+              onClick={opnetConnected ? disconnectOPWallet : handleOPNetConnect}
               disabled={isConnectingOPNet}
               className={`
                 px-4 py-2 rounded-lg font-medium text-sm
@@ -133,7 +133,7 @@ export function Navbar() {
             
             {/* Base Wallet */}
             <motion.button
-              onClick={baseConnected ? disconnectBase : handleBaseConnect}
+              onClick={baseConnected ? disconnectBaseWallet : handleBaseConnect}
               disabled={isConnectingBase}
               className={`
                 px-4 py-2 rounded-lg font-medium text-sm
