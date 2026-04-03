@@ -489,4 +489,3 @@ This is a **demonstration/template project**. Before deploying to production:
 **Built with ❤️ for the Bitcoin L1 ecosystem**
 
 *Stack Your Tokens → Cash Out in Base. One Transfer, Real Shit.*
-
